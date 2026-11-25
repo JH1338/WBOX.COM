@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WBOX 游戏中心 · WBox Minecraft C++ 版</title>
+<meta name="description" content="WBOX 游戏中心：WBox Minecraft C++ 版及后续游戏，统一 WBOX 账号。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230a9d2e'/%3E%3Ctext x='32' y='47' font-size='46' font-family='Arial Black,Arial' font-weight='900' fill='%23fff' text-anchor='middle'%3EW%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap">
+<style>
+:root{
+  --bg:#05070c;--panel:#0b1018;--panel2:#0e1521;--line:rgba(120,190,255,.16);--line-soft:rgba(120,190,255,.08);
+  --cyan:#3fe8ff;--violet:#8b5cf6;--pink:#ff5ecb;--green:#12b143;--text:#e9f0fc;--muted:#8b9cb8;
+  --ok:#34d399;--warn:#fbbf24;--bad:#f87171;--r:18px;--maxw:1180px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:"Noto Sans SC",-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;line-height:1.7;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+::selection{background:rgba(63,232,255,.28);color:#fff}
+a{color:inherit;text-decoration:none}
+button,input{font-family:inherit}
+img{display:block;max-width:100%}
+
+.bg-fx{position:fixed;inset:0;z-index:-2;pointer-events:none;overflow:hidden}
+.bg-fx .g1{position:absolute;width:55vw;height:55vw;left:-12vw;top:-18vw;background:radial-gradient(circle,rgba(18,177,67,.20),transparent 62%);filter:blur(24px)}
+.bg-fx .g2{position:absolute;width:55vw;height:55vw;right:-14vw;top:10vh;background:radial-gradient(circle,rgba(63,232,255,.14),transparent 62%);filter:blur(24px)}
+.bg-fx .g3{position:absolute;width:50vw;height:50vw;left:22vw;bottom:-24vw;background:radial-gradient(circle,rgba(139,92,246,.14),transparent 64%);filter:blur(24px)}
+.bg-fx .mesh{position:absolute;inset:0;background-image:linear-gradient(var(--line-soft) 1px,transparent 1px),linear-gradient(90deg,var(--line-soft) 1px,transparent 1px);background-size:64px 64px;mask-image:radial-gradient(ellipse 78% 58% at 50% 28%,#000 20%,transparent 78%);-webkit-mask-image:radial-gradient(ellipse 78% 58% at 50% 28%,#000 20%,transparent 78%)}
+.cursor-glow{position:fixed;width:400px;height:400px;border-radius:50%;left:0;top:0;background:radial-gradient(circle,rgba(18,177,67,.12),rgba(63,232,255,.06) 45%,transparent 70%);pointer-events:none;z-index:-1}
+#progress{position:fixed;left:0;top:0;height:2px;width:0;background:linear-gradient(90deg,var(--green),var(--cyan),var(--violet));z-index:60}
+
+header{position:fixed;top:0;left:0;right:0;z-index:50;transition:.3s}
+header.scrolled{background:rgba(5,7,12,.8);backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}
+.nav{max-width:var(--maxw);margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:26px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:900;letter-spacing:.1em;font-size:15px}
+.mark{width:28px;height:28px;border-radius:6px;display:grid;place-items:center;font:900 17px/1 "Arial Black",Arial,sans-serif;color:#fff;background:linear-gradient(150deg,#1ed15e,#0a8f2b);box-shadow:0 6px 18px -6px rgba(18,177,67,.85);border:1px solid rgba(255,255,255,.25);flex:none}
+.nav .links{display:flex;gap:4px;margin-left:auto}
+.nav .links a{padding:8px 14px;border-radius:10px;font-size:14px;color:var(--muted);transition:.25s}
+.nav .links a:hover{color:#fff;background:rgba(120,190,255,.08)}
+.nav .links a.active{color:var(--cyan)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 20px;border-radius:12px;border:1px solid transparent;font-size:14px;cursor:pointer;transition:.25s;white-space:nowrap}
+.btn.primary{background:linear-gradient(120deg,var(--green),var(--cyan));color:#04120a;font-weight:700;box-shadow:0 8px 26px -10px rgba(18,177,67,.85)}
+.btn.primary:hover{transform:translateY(-2px)}
+.btn.ghost{background:rgba(120,190,255,.06);border-color:var(--line);color:var(--text)}
+.btn.ghost:hover{background:rgba(120,190,255,.13);border-color:rgba(63,232,255,.4)}
+.btn.sm{padding:7px 14px;font-size:13px;border-radius:10px}
+.burger{display:none;background:none;border:0;color:var(--text);font-size:22px;cursor:pointer;margin-left:auto}
+
+section{max-width:var(--maxw);margin:0 auto;padding:84px 24px}
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+.reveal.in{opacity:1;transform:none}
+h2.sec{font-size:clamp(22px,3vw,32px);font-weight:900;letter-spacing:-.02em;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+h2.sec small{font-size:12px;letter-spacing:.16em;color:var(--cyan);font-weight:500}
+.lead{color:var(--muted);max-width:660px;margin-top:10px;font-size:14.5px}
+
+/* HERO */
+#home{min-height:84vh;display:grid;place-items:center;padding-top:120px}
+.hero-wrap{text-align:center;max-width:820px}
+.big-mark{width:116px;height:116px;border-radius:22px;margin:0 auto 26px;display:grid;place-items:center;font:900 60px/1 "Arial Black",Arial,sans-serif;color:#fff;
+  background:linear-gradient(150deg,#1ed15e,#0a8f2b);border:1px solid rgba(255,255,255,.28);
+  box-shadow:0 30px 70px -28px rgba(18,177,67,.9),inset 0 -8px 22px rgba(0,0,0,.25);position:relative}
+.big-mark::after{content:"";position:absolute;inset:-12px;border-radius:28px;border:1px solid rgba(18,177,67,.3);animation:pulseRing 3.4s ease-in-out infinite}
+@keyframes pulseRing{0%,100%{opacity:.35;transform:scale(1)}50%{opacity:.9;transform:scale(1.05)}}
+.hero-wrap h1{font-size:clamp(34px,5.4vw,60px);font-weight:900;letter-spacing:.02em;line-height:1.15}
+.hero-wrap p{margin-top:16px;color:var(--muted);font-size:15px}
+.hero-wrap .cta{display:flex;gap:12px;justify-content:center;margin-top:30px;flex-wrap:wrap}
+.badges{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:34px}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(120,190,255,.05);font-size:12.5px;color:#b9cfe8}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok)}
+
+/* 游戏库 */
+.games{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:40px}
+.game{position:relative;border-radius:20px;overflow:hidden;border:1px solid var(--line);background:var(--panel);transition:.35s;display:flex;flex-direction:column}
+.game:hover{transform:translateY(-5px);border-color:rgba(18,177,67,.5);box-shadow:0 26px 60px -34px rgba(18,177,67,.7)}
+.game .cover{aspect-ratio:16/10;overflow:hidden;position:relative}
+.game .cover img{width:100%;height:100%;object-fit:cover;transition:transform .8s ease}
+.game:hover .cover img{transform:scale(1.06)}
+.game .cover::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(8,12,19,.92))}
+.game .tag{position:absolute;left:12px;top:12px;z-index:2;font-size:11px;padding:4px 10px;border-radius:8px;background:rgba(6,10,16,.72);border:1px solid rgba(18,177,67,.5);color:#9bf0b6;backdrop-filter:blur(8px)}
+.game .body{padding:16px 18px 18px;display:flex;flex-direction:column;gap:6px;flex:1;margin-top:-26px;position:relative;z-index:2}
+.game h3{font-size:17px;font-weight:800;letter-spacing:-.01em}
+.game .meta{font-size:11.8px;color:#7f97b6;letter-spacing:.04em}
+.game .desc{font-size:12.5px;color:var(--muted);margin-top:2px}
+.game .act{margin-top:auto;padding-top:14px;display:flex;gap:8px}
+.game .act .btn{flex:1}
+.slot{border-style:dashed;border-color:rgba(120,190,255,.22);background:rgba(120,190,255,.03);display:grid;place-items:center;text-align:center;padding:34px 16px;cursor:pointer;min-height:260px;border-radius:20px;transition:.3s}
+.slot:hover{border-color:rgba(63,232,255,.45);background:rgba(63,232,255,.05)}
+.slot .plus{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;font-size:26px;color:#9fd8ff;border:1px dashed rgba(120,190,255,.4);margin-bottom:14px}
+.slot h3{font-size:15px;color:#cfe0f5}
+.slot p{font-size:12px;color:#617a99;margin-top:6px;max-width:190px}
+
+/* 账号 */
+.panel{padding:28px;border-radius:var(--r);border:1px solid var(--line);background:linear-gradient(180deg,rgba(14,21,32,.92),rgba(9,13,20,.92))}
+.acc-shell{display:grid;grid-template-columns:1.05fr .95fr;gap:22px;margin-top:36px}
+.tabs{display:flex;gap:6px;padding:4px;border-radius:12px;background:rgba(0,0,0,.32);border:1px solid var(--line-soft);margin-bottom:24px}
+.tabs button{flex:1;padding:9px;border-radius:9px;border:0;background:none;color:var(--muted);font-size:13.5px;cursor:pointer;transition:.25s}
+.tabs button.on{background:linear-gradient(120deg,rgba(18,177,67,.22),rgba(63,232,255,.16));color:#fff;box-shadow:inset 0 0 0 1px rgba(18,177,67,.35)}
+.field{margin-bottom:15px}
+.field label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:6px}
+.field input{width:100%;padding:12px 14px;border-radius:11px;border:1px solid var(--line);background:rgba(0,0,0,.34);color:var(--text);font-size:14px;outline:none;transition:.2s}
+.field input:focus{border-color:rgba(18,177,67,.55);box-shadow:0 0 0 3px rgba(18,177,67,.12)}
+.field .hint{font-size:11.5px;color:#63799a;margin-top:5px}
+.msg{margin-top:4px;font-size:12.5px;min-height:18px}
+.msg.err{color:var(--bad)}.msg.ok{color:var(--ok)}
+.acc-submit{width:100%;padding:13px;font-size:14.5px;margin-top:4px}
+.profile{display:none}
+.profile.on{display:block}
+.avatar{width:54px;height:54px;border-radius:14px;display:grid;place-items:center;font-weight:900;font-size:22px;color:#04120a;flex:none}
+.pf-head{display:flex;gap:14px;align-items:center;padding-bottom:18px;border-bottom:1px solid var(--line-soft)}
+.pf-head .nm{font-size:18px;font-weight:800}
+.pf-head .rl{font-size:11.5px;color:var(--cyan);letter-spacing:.08em;margin-top:2px}
+.pf-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}
+.pf-stats div{padding:12px;border-radius:11px;background:rgba(120,190,255,.05);border:1px solid var(--line-soft);text-align:center}
+.pf-stats b{display:block;font-size:17px;font-weight:800;color:#d8e8ff}
+.pf-stats span{font-size:11px;color:#677f9e}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line-soft);font-size:12.8px}
+.kv span{color:#6d87a8}.kv b{font-weight:600;color:#cfe0f5}
+.side-info{padding:26px;border-radius:var(--r);border:1px solid var(--line);background:var(--panel);height:fit-content}
+.side-info h4{font-size:14.5px;font-weight:700;margin-bottom:10px}
+.proj{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line-soft);font-size:12.8px}
+.proj .pn{color:#cfe0f5;font-weight:500}
+.proj .ps{font-size:10.5px;padding:2px 8px;border-radius:6px;border:1px solid var(--line);color:#8fa6c4;white-space:nowrap}
+.proj .ps.live{color:#9bf0b6;border-color:rgba(18,177,67,.45);background:rgba(18,177,67,.09)}
+.safety{margin-top:16px;padding:13px;border-radius:12px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.22);font-size:12px;color:#e8d9a8;line-height:1.75}
+.admin-toggle{margin-top:18px;padding-top:16px;border-top:1px solid var(--line-soft)}
+.admin-toggle button{background:none;border:0;color:#7f97b6;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:7px;padding:0}
+.admin-toggle button:hover{color:var(--cyan)}
+.admin{display:none;margin-top:14px}
+.admin.on{display:block}
+.admin .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.admin .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.status{font-size:12px;color:#7f97b6;margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.3);border:1px solid var(--line-soft);word-break:break-all;line-height:1.6}
+
+footer{border-top:1px solid var(--line);background:rgba(4,6,10,.7);padding:46px 24px 30px}
+.foot{max-width:var(--maxw);margin:0 auto;display:flex;gap:36px;justify-content:space-between;flex-wrap:wrap}
+.foot .brand{max-width:340px}
+.foot .brand .logo{margin-bottom:12px}
+.foot .brand p{font-size:12.5px;color:#6d87a8;line-height:1.8}
+.foot .cols{display:flex;gap:52px;flex-wrap:wrap}
+.foot .col h5{font-size:11.5px;letter-spacing:.14em;color:#7f97b6;margin-bottom:10px;font-weight:500}
+.foot .col a{display:block;font-size:12.5px;color:#8fa6c4;padding:4px 0}
+.foot .col a:hover{color:var(--cyan)}
+.copy{max-width:var(--maxw);margin:30px auto 0;padding-top:18px;border-top:1px solid var(--line-soft);font-size:11.8px;color:#5b7290;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+.dl-overlay{position:fixed;inset:0;z-index:80;display:none;place-items:center;background:rgba(3,5,9,.86);backdrop-filter:blur(14px)}
+.dl-overlay.on{display:grid}
+.dl-box{text-align:center;padding:40px 36px;border-radius:22px;border:1px solid rgba(18,177,67,.4);background:var(--panel2);box-shadow:0 40px 90px -30px rgba(18,177,67,.5);max-width:380px;width:calc(100% - 40px)}
+.ring{width:92px;height:92px;margin:0 auto 18px;border-radius:50%;display:grid;place-items:center;position:relative;font-size:30px;font-weight:900;color:#7ff0a6}
+.ring::before{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid rgba(18,177,67,.55);animation:rings 1s linear infinite}
+@keyframes rings{to{transform:rotate(360deg)}}
+.dl-box h4{font-size:16px;margin-bottom:6px}
+.dl-box p{font-size:12.5px;color:var(--muted)}
+
+@media(max-width:980px){
+  .nav .links{display:none}.burger{display:block}
+  .games{grid-template-columns:repeat(2,1fr)}
+  .acc-shell{grid-template-columns:1fr}
+}
+@media(max-width:620px){
+  section{padding:64px 18px}
+  .nav{padding:12px 18px}
+  .games{grid-template-columns:1fr}
+  .pf-stats{grid-template-columns:1fr}
+  .admin .row2{grid-template-columns:1fr}
+  .big-mark{width:92px;height:92px;font-size:50px}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="bg-fx"><div class="g1"></div><div class="g2"></div><div class="g3"></div><div class="mesh"></div></div>
+<div class="cursor-glow" id="cglow"></div>
+<div id="progress"></div>
+
+<header id="header">
+  <div class="nav">
+    <a href="#home" class="logo"><span class="mark">W</span>WBOX</a>
+    <nav class="links" id="navLinks">
+      <a href="#home" class="active">首页</a>
+      <a href="#games">游戏库</a>
+      <a href="#account">WBOX 账号</a>
+    </nav>
+    <a href="#account" class="btn primary sm" id="navCta">登录 / 注册</a>
+    <button class="burger" id="burger" aria-label="菜单">☰</button>
+  </div>
+</header>
+
+<!-- ===== 首页 ===== -->
+<section id="home">
+  <div class="hero-wrap">
+    <div class="big-mark">W</div>
+    <h1>WBOX 游戏中心</h1>
+    <p>一个账号，玩遍 WBOX 所有项目。现在上架第一款：WBox Minecraft C++ 版。</p>
+    <div class="cta">
+      <a href="#games" class="btn primary">进入游戏库</a>
+      <a href="#account" class="btn ghost">创建 WBOX 账号</a>
+    </div>
+    <div class="badges">
+      <span class="badge"><span class="dot"></span>1 款已上架</span>
+      <span class="badge">全部项目通用账号</span>
+      <span class="badge">GitHub Pages 托管</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 游戏库 ===== -->
+<section id="games" style="padding-top:0">
+  <div class="reveal">
+    <h2 class="sec"><small>GAME LIBRARY</small>游戏库</h2>
+    <p class="lead">每张卡片都是一个可上架的坑位，后面加新游戏直接补进网格就行。</p>
+  </div>
+
+  <div class="games">
+    <div class="game reveal">
+      <div class="cover"><img src="assets/hero.png" alt="WBox Minecraft C++ 版"><span class="tag">已上架 · 内测</span></div>
+      <div class="body">
+        <h3>WBox Minecraft C++ 版</h3>
+        <div class="meta">v0.1.0-alpha · Windows 64 位</div>
+        <div class="desc">C++ 重写渲染内核，低配机器也能跑。</div>
+        <div class="act"><button class="btn primary sm" id="dlBtn">下载</button></div>
+      </div>
+    </div>
+
+    <div class="slot reveal">
+      <div class="plus">+</div>
+      <h3>待上架游戏</h3>
+      <p>这个位置留给下一款 WBOX 作品</p>
+    </div>
+
+    <div class="slot reveal">
+      <div class="plus">+</div>
+      <h3>待上架游戏</h3>
+      <p>新增卡片不用改布局，复制一张即可</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 账号 ===== -->
+<section id="account" style="padding-top:0">
+  <div class="reveal">
+    <h2 class="sec"><small>WBOX ACCOUNT</small>WBOX 账号</h2>
+    <p class="lead">一个账号通用 WBOX 全部项目，不只是这一款。数据存在本机浏览器，管理员可按需同步到 GitHub 仓库里的单个 JSON。</p>
+  </div>
+
+  <div class="acc-shell reveal">
+    <div class="panel">
+      <div id="authView">
+        <div class="tabs">
+          <button class="on" data-tab="login">登录</button>
+          <button data-tab="reg">注册</button>
+        </div>
+
+        <form id="loginForm" autocomplete="off">
+          <div class="field"><label>用户名</label><input id="liUser" placeholder="字母、数字或下划线" maxlength="16"></div>
+          <div class="field"><label>密码</label><input id="liPass" type="password" placeholder="至少 6 位" maxlength="40"></div>
+          <div class="msg" id="loginMsg"></div>
+          <button class="btn primary acc-submit" type="submit">登录</button>
+        </form>
+
+        <form id="regForm" autocomplete="off" style="display:none">
+          <div class="field"><label>用户名</label><input id="rgUser" placeholder="3–16 位，字母 / 数字 / 下划线" maxlength="16"></div>
+          <div class="field"><label>昵称</label><input id="rgNick" placeholder="显示在个人中心，可留空" maxlength="18"></div>
+          <div class="field"><label>密码</label><input id="rgPass" type="password" placeholder="至少 6 位" maxlength="40"><div class="hint">只保存加盐哈希，仓库里看不到原文。</div></div>
+          <div class="field"><label>确认密码</label><input id="rgPass2" type="password" placeholder="再输一次" maxlength="40"></div>
+          <div class="msg" id="regMsg"></div>
+          <button class="btn primary acc-submit" type="submit">创建 WBOX 账号</button>
+        </form>
+      </div>
+
+      <div class="profile" id="profileView">
+        <div class="pf-head">
+          <div class="avatar" id="pfAvatar">W</div>
+          <div>
+            <div class="nm" id="pfName">username</div>
+            <div class="rl" id="pfRole">WBOX 账号 · 通用</div>
+          </div>
+        </div>
+        <div class="pf-stats">
+          <div><b id="pfDl">0</b><span>下载次数</span></div>
+          <div><b id="pfDays">1</b><span>加入天数</span></div>
+          <div><b id="pfBind">否</b><span>已同步</span></div>
+        </div>
+        <div class="kv"><span>注册时间</span><b id="pfCreated">—</b></div>
+        <div class="kv"><span>最近登录</span><b id="pfLast">—</b></div>
+        <div style="display:flex;gap:10px;margin-top:18px">
+          <button class="btn ghost sm" id="logoutBtn">退出登录</button>
+          <button class="btn ghost sm" id="goDl">去下载</button>
+        </div>
+      </div>
+
+      <div class="admin-toggle">
+        <button id="adminToggle">⚙ 数据同步设置（管理员）</button>
+        <div class="admin" id="adminPanel">
+          <div class="field"><label>GitHub 仓库</label><input id="ghRepo" placeholder="owner/repo"></div>
+          <div class="row2">
+            <div class="field"><label>分支</label><input id="ghBranch" value="main"></div>
+            <div class="field"><label>数据文件路径</label><input id="ghPath" value="data/users.json"></div>
+          </div>
+          <div class="field"><label>访问令牌 Token</label><input id="ghToken" type="password" placeholder="github_pat_…"><div class="hint">只存在这台电脑的浏览器里，别提交进仓库。</div></div>
+          <div class="btns">
+            <button class="btn primary sm" id="ghSave">保存配置</button>
+            <button class="btn ghost sm" id="ghPull">从仓库拉取</button>
+            <button class="btn ghost sm" id="ghPush">合并并上传</button>
+            <button class="btn ghost sm" id="ghExport">导出 JSON</button>
+            <button class="btn ghost sm" id="ghImport">导入 JSON</button>
+          </div>
+          <div class="status" id="ghStatus">尚未配置仓库。配置后可把本机账号与 data/users.json 合并同步。</div>
+          <input type="file" id="fileInput" accept=".json,application/json" style="display:none">
+        </div>
+      </div>
+    </div>
+
+    <div class="side-info reveal">
+      <h4>账号通用范围</h4>
+      <div class="proj"><span class="pn">WBox Minecraft C++ 版</span><span class="ps live">已上架</span></div>
+      <div class="proj"><span class="pn">虚空链接 VOIDLINK</span><span class="ps">筹备中</span></div>
+      <div class="proj"><span class="pn">主机版移植工具</span><span class="ps">筹备中</span></div>
+      <h4 style="margin-top:22px">数据怎么存</h4>
+      <p style="font-size:12.8px;color:var(--muted)">账号记录在仓库的 <code style="color:#9fd8ff">data/users.json</code>，同时每台设备留一份浏览器副本。</p>
+      <div style="margin-top:12px">
+        <div class="kv"><span>存储位置</span><b>GitHub 仓库 JSON</b></div>
+        <div class="kv"><span>本机副本</span><b>localStorage</b></div>
+        <div class="kv"><span>密码处理</span><b>SHA-256 + 盐</b></div>
+      </div>
+      <div class="safety">⚠ 静态站点没有服务端鉴权，写入仓库需要一个 GitHub 令牌，只放在管理员浏览器里，别写进代码或公开仓库。</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="foot">
+    <div class="brand">
+      <div class="logo"><span class="mark">W</span>WBOX</div>
+      <p>WBOX 游戏中心，首发作品 WBox Minecraft C++ 版。本站与 Mojang Studios、Microsoft 无隶属关系。</p>
+    </div>
+    <div class="cols">
+      <div class="col"><h5>站点</h5><a href="#games">游戏库</a><a href="#account">WBOX 账号</a></div>
+      <div class="col"><h5>项目</h5><a href="https://buzzheavier.com/jmxaou62ltk1" target="_blank" rel="noopener">Minecraft C++ 下载 ↗</a></div>
+    </div>
+  </div>
+  <div class="copy"><span>© 2026 WBOX 团队</span><span>GitHub Pages · No backend</span></div>
+</footer>
+
+<div class="dl-overlay" id="dlOverlay">
+  <div class="dl-box">
+    <div class="ring" id="ringNum">3</div>
+    <h4>正在跳转到网盘</h4>
+    <p>新标签页会自动打开，被拦截就点下面。</p>
+    <button class="btn ghost sm" id="jumpNow" style="margin-top:14px">手动打开</button>
+  </div>
+</div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const DL_URL = 'https://buzzheavier.com/jmxaou62ltk1';
+
+/* ===== SHA-256（纯 JS，file:// 也可用） ===== */
+(function () {
+  const K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+  const rotr = (x, n) => (x >>> n) | (x << (32 - n));
+  function hash(bytes) {
+    const H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+    const len = bytes.length, total = ((len + 9 + 63) >> 6) << 6;
+    const buf = new Uint8Array(total); buf.set(bytes); buf[len] = 0x80;
+    const dv = new DataView(buf.buffer);
+    dv.setUint32(total - 8, Math.floor(len / 536870912));
+    dv.setUint32(total - 4, (len << 3) >>> 0);
+    const w = new Uint32Array(64);
+    for (let off = 0; off < total; off += 64) {
+      for (let i = 0; i < 16; i++) w[i] = dv.getUint32(off + i * 4);
+      for (let i = 16; i < 64; i++) {
+        const s0 = rotr(w[i-15],7) ^ rotr(w[i-15],18) ^ (w[i-15] >>> 3);
+        const s1 = rotr(w[i-2],17) ^ rotr(w[i-2],19) ^ (w[i-2] >>> 10);
+        w[i] = (w[i-16] + s0 + w[i-7] + s1) >>> 0;
+      }
+      let a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];
+      for (let i = 0; i < 64; i++) {
+        const S1 = rotr(e,6) ^ rotr(e,11) ^ rotr(e,25), ch = (e & f) ^ (~e & g);
+        const t1 = (h + S1 + ch + K[i] + w[i]) >>> 0;
+        const S0 = rotr(a,2) ^ rotr(a,13) ^ rotr(a,22), maj = (a & b) ^ (a & c) ^ (b & c);
+        const t2 = (S0 + maj) >>> 0;
+        h = g; g = f; f = e; e = (d + t1) >>> 0; d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+      }
+      H[0] = (H[0]+a)>>>0; H[1] = (H[1]+b)>>>0; H[2] = (H[2]+c)>>>0; H[3] = (H[3]+d)>>>0;
+      H[4] = (H[4]+e)>>>0; H[5] = (H[5]+f)>>>0; H[6] = (H[6]+g)>>>0; H[7] = (H[7]+h)>>>0;
+    }
+    return H.map(x => x.toString(16).padStart(8, '0')).join('');
+  }
+  const enc = new TextEncoder();
+  window.sha256 = s => hash(enc.encode(s));
+})();
+
+const SITE_SALT = 'wbox-account-2026';
+function hashPass(username, password) {
+  let hex = sha256(SITE_SALT + '|' + username.toLowerCase() + '|' + password);
+  for (let i = 0; i < 600; i++) hex = sha256(hex + SITE_SALT + i);
+  return hex;
+}
+function avatarColor(seed) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) % 360;
+  return 'linear-gradient(135deg,hsl(' + h + ' 85% 62%),hsl(' + ((h + 60) % 360) + ' 80% 58%))';
+}
+function fmtTime(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts), p = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+
+/* ===== 数据 ===== */
+const LS_USERS = 'wbox_accounts_v1', LS_CFG = 'wbox_gh_cfg', LS_SESSION = 'wbox_session_v1';
+const db = {
+  users: [],
+  load() {
+    try { const raw = localStorage.getItem(LS_USERS); this.users = raw ? (JSON.parse(raw).users || []) : []; }
+    catch (e) { this.users = []; }
+    return this.users;
+  },
+  save() { localStorage.setItem(LS_USERS, JSON.stringify({ version: 1, updatedAt: Date.now(), users: this.users })); },
+  find(u) { const k = (u || '').toLowerCase(); return this.users.find(x => x.username.toLowerCase() === k); },
+  upsert(user) {
+    const i = this.users.findIndex(x => x.username.toLowerCase() === user.username.toLowerCase());
+    if (i >= 0) this.users[i] = Object.assign({}, this.users[i], user); else this.users.push(user);
+    this.save();
+  }
+};
+db.load();
+const session = {
+  get() { try { return JSON.parse(localStorage.getItem(LS_SESSION) || 'null'); } catch (e) { return null; } },
+  set(u) { localStorage.setItem(LS_SESSION, JSON.stringify({ username: u })); },
+  clear() { localStorage.removeItem(LS_SESSION); }
+};
+
+/* ===== 账号界面 ===== */
+$$('.tabs button').forEach(btn => btn.addEventListener('click', () => {
+  $$('.tabs button').forEach(b => b.classList.toggle('on', b === btn));
+  $('#loginForm').style.display = btn.dataset.tab === 'login' ? '' : 'none';
+  $('#regForm').style.display = btn.dataset.tab === 'reg' ? '' : 'none';
+  $('#loginMsg').textContent = '';
+  $('#regMsg').textContent = '';
+}));
+function setMsg(id, text, type) {
+  const el = $('#' + id);
+  el.textContent = text || '';
+  el.className = 'msg' + (type ? ' ' + type : '');
+}
+
+$('#regForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const username = $('#rgUser').value.trim(), nick = $('#rgNick').value.trim();
+  const pass = $('#rgPass').value, pass2 = $('#rgPass2').value;
+  if (!/^[A-Za-z0-9_]{3,16}$/.test(username)) return setMsg('regMsg', '用户名需为 3–16 位字母、数字或下划线。', 'err');
+  if (pass.length < 6) return setMsg('regMsg', '密码至少 6 位。', 'err');
+  if (pass !== pass2) return setMsg('regMsg', '两次密码不一致。', 'err');
+  if (db.find(username)) return setMsg('regMsg', '这个用户名已被注册。', 'err');
+  const now = Date.now();
+  db.upsert({ username, nickname: nick || username, passHash: hashPass(username, pass), role: 'member', createdAt: now, lastLogin: now, downloads: 0, updatedAt: now });
+  session.set(username);
+  $('#regForm').reset();
+  renderAccount();
+  toast('WBOX 账号创建成功');
+});
+
+$('#loginForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const username = $('#liUser').value.trim(), pass = $('#liPass').value;
+  if (!username || !pass) return setMsg('loginMsg', '用户名和密码都要填。', 'err');
+  const user = db.find(username);
+  if (!user) return setMsg('loginMsg', '没有这个账号，先注册吧。', 'err');
+  if (user.passHash !== hashPass(user.username, pass)) return setMsg('loginMsg', '密码不对。', 'err');
+  user.lastLogin = Date.now(); user.updatedAt = Date.now();
+  db.upsert(user); session.set(user.username);
+  $('#loginForm').reset(); renderAccount(); toast('登录成功');
+});
+
+$('#logoutBtn').addEventListener('click', () => { session.clear(); renderAccount(); toast('已退出登录'); });
+$('#goDl').addEventListener('click', () => startDownload());
+
+function renderAccount() {
+  const s = session.get(), user = s ? db.find(s.username) : null;
+  if (!user) {
+    $('#authView').style.display = '';
+    $('#profileView').classList.remove('on');
+    $('#navCta').textContent = '登录 / 注册';
+    return;
+  }
+  $('#authView').style.display = 'none';
+  $('#profileView').classList.add('on');
+  $('#pfAvatar').textContent = (user.nickname || user.username).slice(0, 1).toUpperCase();
+  $('#pfAvatar').style.background = avatarColor(user.username);
+  $('#pfName').textContent = user.nickname || user.username;
+  $('#pfRole').textContent = '@' + user.username + ' · WBOX 账号';
+  $('#pfDl').textContent = user.downloads || 0;
+  $('#pfDays').textContent = Math.max(1, Math.ceil((Date.now() - user.createdAt) / 86400000));
+  $('#pfBind').textContent = (cfg.token && cfg.repo) ? '是' : '否';
+  $('#pfCreated').textContent = fmtTime(user.createdAt);
+  $('#pfLast').textContent = fmtTime(user.lastLogin);
+  $('#navCta').textContent = (user.nickname || user.username).slice(0, 8);
+}
+
+let toastTimer = null;
+function toast(text) {
+  let el = $('#toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'toast';
+    el.style.cssText = 'position:fixed;left:50%;bottom:34px;transform:translate(-50%,14px);z-index:90;padding:12px 22px;border-radius:12px;background:rgba(11,18,28,.96);border:1px solid rgba(18,177,67,.45);font-size:13.5px;opacity:0;transition:.3s';
+    document.body.appendChild(el);
+  }
+  el.textContent = text;
+  requestAnimationFrame(() => { el.style.opacity = '1'; el.style.transform = 'translate(-50%,0)'; });
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translate(-50%,14px)'; }, 2600);
+}
+
+/* ===== GitHub 同步 ===== */
+let cfg = { repo: '', branch: 'main', path: 'data/users.json', token: '' };
+try { cfg = Object.assign(cfg, JSON.parse(localStorage.getItem(LS_CFG) || '{}')); } catch (e) {}
+$('#ghRepo').value = cfg.repo || ''; $('#ghBranch').value = cfg.branch || 'main';
+$('#ghPath').value = cfg.path || 'data/users.json'; $('#ghToken').value = cfg.token || '';
+
+function ghStatus(t, type) {
+  const el = $('#ghStatus'); el.textContent = t;
+  el.style.color = type === 'err' ? '#f87171' : type === 'ok' ? '#34d399' : '#7f97b6';
+}
+function b64encode(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = ''; for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+function b64decode(b64) {
+  const bin = atob(b64.replace(/\n/g, ''));
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+function readCfg() {
+  cfg.repo = $('#ghRepo').value.trim(); cfg.branch = $('#ghBranch').value.trim() || 'main';
+  cfg.path = $('#ghPath').value.trim() || 'data/users.json'; cfg.token = $('#ghToken').value.trim();
+  localStorage.setItem(LS_CFG, JSON.stringify(cfg));
+}
+async function fetchRemote() {
+  const url = 'https://api.github.com/repos/' + cfg.repo + '/contents/' + cfg.path + '?ref=' + encodeURIComponent(cfg.branch);
+  const headers = { 'Accept': 'application/vnd.github+json' };
+  if (cfg.token) headers['Authorization'] = 'Bearer ' + cfg.token;
+  const res = await fetch(url, { headers });
+  if (res.status === 404) return { base: { missing: true } };
+  if (!res.ok) throw new Error('读取仓库失败 HTTP ' + res.status);
+  const json = await res.json();
+  return { base: json, data: JSON.parse(b64decode(json.content)) };
+}
+async function pushRemote(obj) {
+  let sha = null;
+  try { const cur = await fetchRemote(); if (!cur.base.missing) sha = cur.base.sha; } catch (e) {}
+  const body = { message: 'chore(data): 更新 WBOX 账号 ' + new Date().toISOString().slice(0, 16), content: b64encode(JSON.stringify(obj, null, 2)), branch: cfg.branch };
+  if (sha) body.sha = sha;
+  const res = await fetch('https://api.github.com/repos/' + cfg.repo + '/contents/' + cfg.path, {
+    method: 'PUT',
+    headers: { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + cfg.token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error('写入失败 HTTP ' + res.status + (err.message ? ' · ' + err.message : '')); }
+  return res.json();
+}
+function mergeUsers(a, b) {
+  const map = new Map();
+  (b || []).forEach(u => { if (u && u.username) map.set(u.username.toLowerCase(), u); });
+  (a || []).forEach(u => {
+    if (!u || !u.username) return;
+    const k = u.username.toLowerCase(), old = map.get(k);
+    if (!old) { map.set(k, u); return; }
+    map.set(k, (u.updatedAt || 0) >= (old.updatedAt || 0) ? Object.assign({}, old, u) : Object.assign({}, u, old));
+  });
+  return Array.from(map.values()).sort((x, y) => (x.createdAt || 0) - (y.createdAt || 0));
+}
+$('#ghSave').addEventListener('click', () => {
+  readCfg();
+  if (!/^[^\s\/]+\/[^\s\/]+$/.test(cfg.repo)) return ghStatus('仓库格式应为 owner/repo。', 'err');
+  ghStatus('已保存：' + cfg.repo + ' · ' + cfg.branch, 'ok');
+});
+$('#ghPull').addEventListener('click', async () => {
+  readCfg(); if (!cfg.repo) return ghStatus('先填仓库。', 'err');
+  ghStatus('正在读取 …');
+  try {
+    const { base, data } = await fetchRemote();
+    if (base.missing) return ghStatus('仓库里还没有这个文件，点“合并并上传”创建。', 'err');
+    db.users = mergeUsers(db.users, data.users || []); db.save(); renderAccount();
+    ghStatus('拉取成功，共 ' + db.users.length + ' 个账号。', 'ok');
+  } catch (e) { ghStatus(e.message, 'err'); }
+});
+$('#ghPush').addEventListener('click', async () => {
+  readCfg(); if (!cfg.repo) return ghStatus('先填仓库。', 'err');
+  if (!cfg.token) return ghStatus('上传需要 contents:write 权限的令牌。', 'err');
+  ghStatus('正在合并写入 …');
+  try {
+    let remote = [];
+    try { const { base, data } = await fetchRemote(); if (!base.missing) remote = data.users || []; } catch (e) {}
+    const merged = mergeUsers(db.users, remote);
+    db.users = merged; db.save();
+    await pushRemote({ version: 1, updatedAt: Date.now(), users: merged });
+    renderAccount(); ghStatus('已上传，仓库中共 ' + merged.length + ' 个账号。', 'ok'); toast('账号已同步到 GitHub');
+  } catch (e) { ghStatus(e.message, 'err'); }
+});
+$('#ghExport').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify({ version: 1, updatedAt: Date.now(), users: db.users }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'users.json'; a.click();
+  ghStatus('已导出 users.json。', 'ok');
+});
+$('#ghImport').addEventListener('click', () => $('#fileInput').click());
+$('#fileInput').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const data = JSON.parse(await f.text());
+    db.users = mergeUsers(db.users, Array.isArray(data) ? data : (data.users || []));
+    db.save(); renderAccount(); ghStatus('导入完成，本机共 ' + db.users.length + ' 个账号。', 'ok');
+  } catch (err) { ghStatus('JSON 解析失败：' + err.message, 'err'); }
+  e.target.value = '';
+});
+$('#adminToggle').addEventListener('click', () => $('#adminPanel').classList.toggle('on'));
+
+/* ===== 下载 ===== */
+const overlay = $('#dlOverlay');
+let cdTimer = null;
+function startDownload() {
+  const s = session.get();
+  if (s) { const u = db.find(s.username); if (u) { u.downloads = (u.downloads || 0) + 1; u.updatedAt = Date.now(); db.upsert(u); renderAccount(); } }
+  overlay.classList.add('on');
+  let n = 3; $('#ringNum').textContent = n;
+  clearInterval(cdTimer);
+  cdTimer = setInterval(() => {
+    n--;
+    if (n <= 0) { clearInterval(cdTimer); overlay.classList.remove('on'); window.open(DL_URL, '_blank', 'noopener'); return; }
+    $('#ringNum').textContent = n;
+  }, 900);
+}
+$('#dlBtn').addEventListener('click', startDownload);
+$('#jumpNow').addEventListener('click', () => { clearInterval(cdTimer); overlay.classList.remove('on'); window.open(DL_URL, '_blank', 'noopener'); });
+overlay.addEventListener('click', e => { if (e.target === overlay) { clearInterval(cdTimer); overlay.classList.remove('on'); } });
+$$('.slot').forEach(s => s.addEventListener('click', () => toast('这个坑位留给下一款 WBOX 游戏')));
+
+/* ===== 视觉 ===== */
+const header = $('#header');
+window.addEventListener('scroll', () => {
+  const st = window.scrollY;
+  header.classList.toggle('scrolled', st > 30);
+  const h = document.documentElement.scrollHeight - window.innerHeight;
+  $('#progress').style.width = (h > 0 ? (st / h) * 100 : 0) + '%';
+  $$('.nav .links a').forEach(a => {
+    const sec = document.getElementById(a.getAttribute('href').slice(1));
+    if (!sec) return;
+    const top = sec.offsetTop - 110;
+    a.classList.toggle('active', st >= top && st < top + sec.offsetHeight);
+  });
+}, { passive: true });
+
+const glow = $('#cglow');
+let gx = window.innerWidth / 2, gy = 200, cx = gx, cy = gy;
+window.addEventListener('mousemove', e => { gx = e.clientX; gy = e.clientY; }, { passive: true });
+(function loop() {
+  cx += (gx - cx) * .08; cy += (gy - cy) * .08;
+  glow.style.transform = 'translate(' + (cx - 200) + 'px,' + (cy - 200) + 'px)';
+  requestAnimationFrame(loop);
+})();
+
+const io = new IntersectionObserver(es => es.forEach(en => {
+  if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+}), { threshold: .12, rootMargin: '0px 0px -40px 0px' });
+$$('.reveal').forEach((el, i) => { el.style.transitionDelay = (Math.min(i, 6) * .05) + 's'; io.observe(el); });
+
+$('#burger').addEventListener('click', () => {
+  const links = $('#navLinks');
+  const shown = links.style.display === 'flex';
+  links.style.cssText = shown ? '' : 'display:flex;position:absolute;top:60px;left:14px;right:14px;flex-direction:column;background:rgba(8,12,19,.97);border:1px solid rgba(120,190,255,.2);border-radius:14px;padding:10px;gap:2px';
+});
+$$('a[href^="#"]').forEach(a => a.addEventListener('click', () => { if (window.innerWidth <= 980) $('#navLinks').style.cssText = ''; }));
+
+renderAccount();
+</script>
+</body>
+</html>
